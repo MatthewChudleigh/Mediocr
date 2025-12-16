@@ -1,0 +1,94 @@
+name: Publish NuGet Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'SemVer version to publish (e.g. 0.1.0-alpha.1)'
+        type: string
+        required: true
+
+jobs:
+  build-pack-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine package version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            RAW_VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            RAW_VERSION="${{ github.event.inputs.version }}"
+          fi
+
+          RAW_VERSION="${RAW_VERSION#v}"
+
+          if [[ -z "$RAW_VERSION" ]]; then
+            echo "Unable to determine package version" >&2
+            exit 1
+          fi
+
+          echo "nuget_version=$RAW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved package version: $RAW_VERSION"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test  # Add if you have tests
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Pack Mediocr.Interfaces
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.nuget_version }}
+          GIT_COMMIT: ${{ github.sha }}
+          REPOSITORY_URL: https://github.com/${{ github.repository }}
+        run: |
+          dotnet pack src/Mediocr.Interfaces/Mediocr.Interfaces.csproj \
+            --configuration Release \
+            --no-build \
+            --output ./artifacts \
+            -p:ContinuousIntegrationBuild=true \
+            -p:PackageVersion=$PACKAGE_VERSION \
+            -p:RepositoryCommit=$GIT_COMMIT \
+            -p:RepositoryUrl=$REPOSITORY_URL
+
+      - name: Pack Mediocr
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.nuget_version }}
+          GIT_COMMIT: ${{ github.sha }}
+          REPOSITORY_URL: https://github.com/${{ github.repository }}
+        run: |
+          dotnet pack src/Mediocr/Mediocr.csproj \
+            --configuration Release \
+            --no-build \
+            --output ./artifacts \
+            -p:ContinuousIntegrationBuild=true \
+            -p:PackageVersion=$PACKAGE_VERSION \
+            -p:RepositoryCommit=$GIT_COMMIT \
+            -p:RepositoryUrl=$REPOSITORY_URL
+
+      - name: Push to NuGet
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push "./artifacts/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --skip-duplicate

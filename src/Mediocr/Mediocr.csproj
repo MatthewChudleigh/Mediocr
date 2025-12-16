@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <NoPackageAnalysis>true</NoPackageAnalysis>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <LangVersion>14</LangVersion>
+
+        <!-- NuGet Package Metadata -->
+        <PackageId>Mediocr</PackageId>
+        <Title>Mediocr Mediator</Title>
+        <Description>Source generator for Mediocr - automatically registers request handlers</Description>
+        <Authors>Matthew Chudleigh</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/MatthewChudleigh/Mediocr</PackageProjectUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+
+        <!-- Analyzer packaging -->
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <DevelopmentDependency>true</DevelopmentDependency>
+
+        <!-- Source Link -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Roslyn dependencies (compile-time only, not in package) -->
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Include DI abstractions as a proper dependency -->
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+
+        <!-- Include Mediocr.Interfaces as a dependency (not PrivateAssets) -->
+        <ProjectReference Include="../Mediocr.Interfaces/Mediocr.Interfaces.csproj" PrivateAssets="none" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Package the generator as an analyzer -->
+        <None Include="$(OutputPath)/$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+
+        <!-- Include README -->
+        <None Include="../../README.md" Pack="true" PackagePath="/" Condition="Exists('../../README.md')" />
+    </ItemGroup>
+
+</Project>
