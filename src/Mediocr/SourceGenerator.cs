@@ -160,7 +160,7 @@ public class RequestHandlerGenerator : IIncrementalGenerator
             b.HandlerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             StringComparison.Ordinal));
 
-        var source = GenerateExtensionClass(handlers);
+        var source = GenerateExtensionClass(handlers, compilation.AssemblyName ?? "Unknown");
         context.AddSource(SourceFileName, SourceText.From(source, Encoding.UTF8));
     }
 
@@ -186,7 +186,8 @@ public class RequestHandlerGenerator : IIncrementalGenerator
     }
 
     private static string GenerateExtensionClass(
-        List<(INamedTypeSymbol HandlerType, ITypeSymbol InputType, ITypeSymbol OutputType)> handlers)
+        List<(INamedTypeSymbol HandlerType, ITypeSymbol InputType, ITypeSymbol OutputType)> handlers,
+        string assemblyName)
     {
         var sb = new StringBuilder();
 
@@ -201,18 +202,20 @@ public class RequestHandlerGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine($"namespace {Namespace}");
         sb.AppendLine("{");
+        
+        // Internal class with the generic method name
         sb.AppendLine($"    /// <summary>");
         sb.AppendLine($"    /// Extension methods for registering MediocR request handlers with dependency injection.");
         sb.AppendLine($"    /// </summary>");
         sb.AppendLine($"    [GeneratedCode(\"{GeneratorName}\", \"{GeneratorVersion}\")]");
-        sb.AppendLine("    public static class MediocRServiceCollectionExtensions");
+        sb.AppendLine("    internal static class MediocRServiceCollectionExtensions");
         sb.AppendLine("    {");
         sb.AppendLine("        /// <summary>");
         sb.AppendLine($"        /// Registers all {handlers.Count} discovered MediocR request handlers as scoped services.");
         sb.AppendLine("        /// </summary>");
         sb.AppendLine("        /// <param name=\"services\">The service collection to add handlers to.</param>");
         sb.AppendLine("        /// <returns>The service collection for chaining.</returns>");
-        sb.AppendLine("        public static IServiceCollection AddMediocrHandlers(this IServiceCollection services)");
+        sb.AppendLine("        internal static IServiceCollection AddMediocrHandlers(this IServiceCollection services)");
         sb.AppendLine("        {");
 
         foreach (var (handlerType, inputType, outputType) in handlers)
@@ -228,6 +231,27 @@ public class RequestHandlerGenerator : IIncrementalGenerator
         sb.AppendLine("            return services;");
         sb.AppendLine("        }");
         sb.AppendLine("    }");
+        sb.AppendLine();
+        
+        // Public class with assembly-specific method name
+        var safeAssemblyName = assemblyName.Replace(".", "_").Replace("-", "_");
+        sb.AppendLine($"    /// <summary>");
+        sb.AppendLine($"    /// Public extension methods for registering MediocR request handlers from {assemblyName}.");
+        sb.AppendLine($"    /// </summary>");
+        sb.AppendLine($"    [GeneratedCode(\"{GeneratorName}\", \"{GeneratorVersion}\")]");
+        sb.AppendLine($"    public static class MediocRServiceCollectionExtensions_{safeAssemblyName}");
+        sb.AppendLine("    {");
+        sb.AppendLine("        /// <summary>");
+        sb.AppendLine($"        /// Registers all {handlers.Count} MediocR request handlers from {assemblyName} as scoped services.");
+        sb.AppendLine("        /// </summary>");
+        sb.AppendLine("        /// <param name=\"services\">The service collection to add handlers to.</param>");
+        sb.AppendLine("        /// <returns>The service collection for chaining.</returns>");
+        sb.AppendLine($"        public static IServiceCollection AddMediocrHandlersFrom{safeAssemblyName}(this IServiceCollection services)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            return MediocRServiceCollectionExtensions.AddMediocrHandlers(services);");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        
         sb.AppendLine("}");
 
         return sb.ToString();

@@ -60,18 +60,35 @@ public class GeneratedCodeSnapshotTests
                                       /// Extension methods for registering MediocR request handlers with dependency injection.
                                       /// </summary>
                                       [GeneratedCode("Mediocr.RequestHandlerGenerator", "1.0.0")]
-                                      public static class MediocRServiceCollectionExtensions
+                                      internal static class MediocRServiceCollectionExtensions
                                       {
                                           /// <summary>
                                           /// Registers all 1 discovered MediocR request handlers as scoped services.
                                           /// </summary>
                                           /// <param name="services">The service collection to add handlers to.</param>
                                           /// <returns>The service collection for chaining.</returns>
-                                          public static IServiceCollection AddMediocrHandlers(this IServiceCollection services)
+                                          internal static IServiceCollection AddMediocrHandlers(this IServiceCollection services)
                                           {
                                               services.AddScoped<global::Mediocr.Interfaces.IRequestHandler<global::TestApp.GetUserRequest, global::TestApp.UserDto>, global::TestApp.GetUserRequestHandler>();
                                   
                                               return services;
+                                          }
+                                      }
+                                  
+                                      /// <summary>
+                                      /// Public extension methods for registering MediocR request handlers from TestAssembly.
+                                      /// </summary>
+                                      [GeneratedCode("Mediocr.RequestHandlerGenerator", "1.0.0")]
+                                      public static class MediocRServiceCollectionExtensions_TestAssembly
+                                      {
+                                          /// <summary>
+                                          /// Registers all 1 MediocR request handlers from TestAssembly as scoped services.
+                                          /// </summary>
+                                          /// <param name="services">The service collection to add handlers to.</param>
+                                          /// <returns>The service collection for chaining.</returns>
+                                          public static IServiceCollection AddMediocrHandlersFromTestAssembly(this IServiceCollection services)
+                                          {
+                                              return MediocRServiceCollectionExtensions.AddMediocrHandlers(services);
                                           }
                                       }
                                   }
