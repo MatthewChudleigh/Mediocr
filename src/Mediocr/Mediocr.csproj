@@ -43,7 +43,8 @@
 
     <ItemGroup>
         <!-- Include DI abstractions as a proper dependency -->
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions"
+                          VersionOverride="[6.0.0,)" />
 
         <!-- Include Mediocr.Interfaces as a dependency (not PrivateAssets) -->
         <ProjectReference Include="../Mediocr.Interfaces/Mediocr.Interfaces.csproj" PrivateAssets="none" />

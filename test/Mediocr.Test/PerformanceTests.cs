@@ -8,16 +8,10 @@ using Xunit.Abstractions;
 /// <summary>
 /// Performance tests to ensure the generator performs efficiently
 /// </summary>
-public class PerformanceTests
+public class PerformanceTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
     private readonly RequestHandlerGenerator _generator = new();
 
-    public PerformanceTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-    
     [Fact]
     public void Generator_WithManyHandlers_CompletesInReasonableTime()
     {
@@ -33,7 +27,7 @@ public class PerformanceTests
         result.GeneratedTrees.Should().HaveCount(1);
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000, "generation should complete in under 5 seconds");
         
-        _output.WriteLine($"Generated code for 100 handlers in {stopwatch.ElapsedMilliseconds}ms");
+        output.WriteLine($"Generated code for 100 handlers in {stopwatch.ElapsedMilliseconds}ms");
     }
     
     [Fact]
@@ -65,7 +59,7 @@ public class DeepHandler : IRequestHandler<DeepRequest, string>
         result.GeneratedTrees.Should().HaveCount(1);
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000);
         
-        _output.WriteLine($"Generated code for deeply nested namespace in {stopwatch.ElapsedMilliseconds}ms");
+        output.WriteLine($"Generated code for deeply nested namespace in {stopwatch.ElapsedMilliseconds}ms");
     }
     
     [Fact]
@@ -98,14 +92,15 @@ public class ComplexHandler : IRequestHandler<ComplexRequest, Dictionary<string,
         result.GeneratedTrees.Should().HaveCount(1);
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000);
         
-        _output.WriteLine($"Generated code for complex generic types in {stopwatch.ElapsedMilliseconds}ms");
+        output.WriteLine($"Generated code for complex generic types in {stopwatch.ElapsedMilliseconds}ms");
     }
     
     [Theory]
-    [InlineData(10)]
-    [InlineData(50)]
-    [InlineData(100)]
-    public void Generator_ScalesLinearlyWithHandlerCount(int handlerCount)
+    [InlineData(1, 1000)] // Warmup
+    [InlineData(10, 100)]
+    [InlineData(500, 100)]
+    [InlineData(1000, 100)]
+    public void Generator_ScalesLinearlyWithHandlerCount(int handlerCount, int expectedMs)
     {
         // Arrange
         var source = GenerateManyHandlers(handlerCount);
@@ -119,10 +114,10 @@ public class ComplexHandler : IRequestHandler<ComplexRequest, Dictionary<string,
         result.GeneratedTrees.Should().HaveCount(1);
         var msPerHandler = (double)stopwatch.ElapsedMilliseconds / handlerCount;
         
-        _output.WriteLine($"Generated {handlerCount} handlers in {stopwatch.ElapsedMilliseconds}ms ({msPerHandler:F2}ms per handler)");
+        output.WriteLine($"Generated {handlerCount} handlers in {stopwatch.ElapsedMilliseconds}ms ({msPerHandler:F2}ms per handler)");
         
         // Should be very fast per handler
-        msPerHandler.Should().BeLessThan(100, "should process each handler quickly");
+        msPerHandler.Should().BeLessThan(expectedMs, "should process each handler quickly");
     }
     
     [Fact]
@@ -139,7 +134,7 @@ public class ComplexHandler : IRequestHandler<ComplexRequest, Dictionary<string,
         var sizeInBytes = System.Text.Encoding.UTF8.GetByteCount(generatedSource!);
         var sizeInKB = sizeInBytes / 1024.0;
         
-        _output.WriteLine($"Generated code size for 100 handlers: {sizeInKB:F2} KB");
+        output.WriteLine($"Generated code size for 100 handlers: {sizeInKB:F2} KB");
         
         // Should be reasonable size (less than 100KB for 100 handlers)
         sizeInKB.Should().BeLessThan(100);
