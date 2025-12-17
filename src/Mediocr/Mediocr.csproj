@@ -24,6 +24,9 @@
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <DevelopmentDependency>true</DevelopmentDependency>
 
+        <!-- Prevent generated files from being included in compilation output -->
+        <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
+
         <!-- Source Link -->
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
